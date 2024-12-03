@@ -1,4 +1,4 @@
-import { IssueSchema } from "@/app/validationSchemas";
+import { patchIssueSchema } from "@/app/validationSchemas";
 import { auth } from "@/auth";
 import prisma from "@/prisma/client";
 import delay from "delay";
@@ -13,9 +13,18 @@ export async function PATCH(
     return NextResponse.json({ message: "Not Authenticated" }, { status: 401 });
 
   const body = await request.json();
-  const validation = IssueSchema.safeParse(body);
+  const validation = patchIssueSchema.safeParse(body);
   if (!validation.success)
     return NextResponse.json(validation.error.format(), { status: 400 });
+
+  const { title, description, assignedToUserId } = body;
+  if (assignedToUserId) {
+    const user = await prisma.user.findUnique({
+      where: { id: assignedToUserId }
+    });
+    if (!user)
+      return NextResponse.json({ error: "Invalid User" }, { status: 400 });
+  }
 
   const { id } = await params;
   const issue = await prisma.issue.findUnique({
@@ -27,8 +36,9 @@ export async function PATCH(
   const updatedIssue = await prisma.issue.update({
     where: { id: issue.id },
     data: {
-      title: body.title,
-      description: body.description
+      title,
+      description,
+      assignedToUserId
     }
   });
 
