@@ -28,3 +28,5 @@ export const metadata: Metadata = {
   description: " View a summary of project issues"
   // OpenGraph for sharing website on social media
 };
+
+export const dynamic = "force-dynamic";
